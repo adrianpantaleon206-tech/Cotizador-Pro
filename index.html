@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cotizador</title>
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --card-bg: #161b22;
+      --input-bg: #21262d;
+      --text-main: #f0f6fc;
+      --accent-neon: #00f2fe;
+      --border-color: #30363d;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      width: 320px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    h2 {
+      color: var(--accent-neon);
+      margin-top: 0;
+    }
+
+    .field {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #0072ff;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #00c6ff;
+    }
+
+    .res-box {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Cotizador</h2>
+
+    <!-- FORMULARIO -->
+    <form id="miCotizador">
+      <div class="field">
+        <label for="campoMonto">Monto Base ($):</label>
+        <input type="number" id="campoMonto" step="0.01" placeholder="Ej: 100" required>
+      </div>
+
+      <div class="field">
+        <label for="campoPlan">Plan:</label>
+        <select id="campoPlan" required>
+          <option value="" disabled selected>-- Selecciona --</option>
+          <option value="0.10">Básico (+10%)</option>
+          <option value="0.20">Estándar (+20%)</option>
+          <option value="0.30">Premium (+30%)</option>
+        </select>
+      </div>
+
+      <!-- Importante: type="submit" para que active el evento submit -->
+      <button type="submit">Calcular</button>
+    </form>
+
+    <!-- RESULTADO -->
+    <div id="pantallaResultado" class="res-box hidden">
+      <p>Monto: <strong id="outMonto">$0.00</strong></p>
+      <p>Recargo: <strong id="outRecargo">$0.00</strong></p>
+      <p>Total: <strong id="outTotal" style="color: var(--accent-neon);">$0.00</strong></p>
+    </div>
+  </div>
+
+  <script>
+    // 1. Obtener elementos por ID directo
+    const formulario = document.getElementById('miCotizador');
+    const inputMonto = document.getElementById('campoMonto');
+    const selectPlan = document.getElementById('campoPlan');
+
+    const cajaResultado = document.getElementById('pantallaResultado');
+    const txtMonto = document.getElementById('outMonto');
+    const txtRecargo = document.getElementById('outRecargo');
+    const txtTotal = document.getElementById('outTotal');
+
+    // 2. Escuchar el evento 'submit'
+    formulario.addEventListener('submit', function(e) {
+      // Evita recargar la página
+      e.preventDefault();
+
+      // Lectura directa de los valores
+      const montoVal = parseFloat(inputMonto.value) || 0;
+      const planVal = parseFloat(selectPlan.value) || 0;
+
+      // Operaciones
+      const recargoCalculado = montoVal * planVal;
+      const totalCalculado = montoVal + recargoCalculado;
+
+      // Inyección en pantalla
+      txtMonto.textContent = '$' + montoVal.toFixed(2);
+      txtRecargo.textContent = '$' + recargoCalculado.toFixed(2);
+      txtTotal.textContent = '$' + totalCalculado.toFixed(2);
+
+      // Mostrar resultados
+      cajaResultado.classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
