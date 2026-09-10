@@ -1,15 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const amountCryptoInput = document.getElementById('amount-crypto');
   const amountFiatInput = document.getElementById('amount-fiat');
+  const amountCryptoInput = document.getElementById('amount-crypto');
   const cryptoSelect = document.getElementById('crypto');
   const fiatSelect = document.getElementById('fiat');
-  const labelAmount = document.getElementById('label-amount');
-  
+
   const precioTotalEl = document.getElementById('precio-total');
   const precioUnitarioEl = document.getElementById('precio-unitario');
   const cambio24hEl = document.getElementById('cambio-24h');
 
-  // Tasas Fiat
+  // Tasas Fiat de referencia respecto a 1 USD
   const tasasFiat = {
     USD: 1,
     VES: 36.5,
@@ -18,31 +17,25 @@ document.addEventListener('DOMContentLoaded', () => {
     ARS: 950
   };
 
-  let modoOrigen = 'crypto';
   let timerDebounce;
-
-  const actualizarEtiqueta = () => {
-    const symbol = cryptoSelect.options[cryptoSelect.selectedIndex].getAttribute('data-symbol');
-    labelAmount.textContent = `Monto (${symbol})`;
-  };
 
   const ejecutarConsulta = () => {
     clearTimeout(timerDebounce);
     timerDebounce = setTimeout(obtenerPrecios, 200);
   };
 
-  amountCryptoInput.addEventListener('input', () => { modoOrigen = 'crypto'; ejecutarConsulta(); });
-  amountFiatInput.addEventListener('input', () => { modoOrigen = 'fiat'; ejecutarConsulta(); });
-  cryptoSelect.addEventListener('change', () => { actualizarEtiqueta(); modoOrigen = 'crypto'; ejecutarConsulta(); });
+  // Eventos: Se calcula cuando cambias el dinero ingresado o la selección de monedas
+  amountFiatInput.addEventListener('input', ejecutarConsulta);
+  cryptoSelect.addEventListener('change', ejecutarConsulta);
   fiatSelect.addEventListener('change', ejecutarConsulta);
 
   async function obtenerPrecios() {
-    const pair = cryptoSelect.value;
-    const symbol = cryptoSelect.options[cryptoSelect.selectedIndex].getAttribute('data-symbol');
+    const pair = cryptoSelect.value; // Ej: 'BTCUSDT'
+    const symbol = cryptoSelect.options[cryptoSelect.selectedIndex].getAttribute('data-symbol') || 'CRIPTO';
     const fiat = fiatSelect.value;
 
     try {
-      // Usamos Binance Spot API (no requiere API key ni auth, cors habilitado para lectura pública)
+      // Consulta de precio en tiempo real desde Binance Spot API
       const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`);
       if (!res.ok) throw new Error('Error de conexión');
 
@@ -50,28 +43,29 @@ document.addEventListener('DOMContentLoaded', () => {
       const precioUSD = parseFloat(data.lastPrice);
       const cambioPorcentaje = parseFloat(data.priceChangePercent);
 
+      // Precio unitario de la Cripto en la Moneda Local elegida
       const multiplicadorFiat = tasasFiat[fiat] || 1;
       const precioUnitarioFiat = precioUSD * multiplicadorFiat;
 
-      if (modoOrigen === 'crypto') {
-        const cantCrypto = parseFloat(amountCryptoInput.value) || 0;
-        const totalCalculado = cantCrypto * precioUnitarioFiat;
-        amountFiatInput.value = cantCrypto > 0 ? totalCalculado.toFixed(2) : '';
-        precioTotalEl.textContent = formatearMoneda(totalCalculado, fiat);
-      } else {
-        const cantFiat = parseFloat(amountFiatInput.value) || 0;
-        const totalCryptoCalculado = cantFiat / precioUnitarioFiat;
-        amountCryptoInput.value = cantFiat > 0 ? totalCryptoCalculado.toFixed(6) : '';
-        precioTotalEl.textContent = `${totalCryptoCalculado.toFixed(6)} ${symbol}`;
+      // LÓGICA DIRECTA: Moneda Local ÷ Precio Unitario = Cripto a recibir
+      const cantFiat = parseFloat(amountFiatInput.value) || 0;
+      const totalCryptoCalculado = cantFiat > 0 ? (cantFiat / precioUnitarioFiat) : 0;
+
+      // Asignar el resultado al input de cripto (si existe) y a la pantalla
+      if (amountCryptoInput) {
+        amountCryptoInput.value = totalCryptoCalculado > 0 ? totalCryptoCalculado.toFixed(6) : '';
       }
 
+      precioTotalEl.textContent = `${totalCryptoCalculado.toFixed(6)} ${symbol}`;
       precioUnitarioEl.textContent = formatearMoneda(precioUnitarioFiat, fiat);
+
+      // Porcentaje de cambio en 24h
       cambio24hEl.textContent = `${cambioPorcentaje >= 0 ? '+' : ''}${cambioPorcentaje.toFixed(2)}%`;
       cambio24hEl.style.color = cambioPorcentaje >= 0 ? '#0ecb81' : '#f6465d';
 
     } catch (error) {
       console.error(error);
-      precioTotalEl.textContent = 'Error al cargar';
+      precioTotalEl.textContent = 'Error al cargar cotización';
     }
   }
 
@@ -83,6 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }).format(monto);
   }
 
-  actualizarEtiqueta();
+  // Ejecución inicial al cargar la página
   obtenerPrecios();
 });
