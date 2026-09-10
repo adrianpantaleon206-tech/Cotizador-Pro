@@ -3,26 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cotizador</title>
+  <title>Cotizador Multidivisa y Cripto</title>
   <style>
     :root {
-      --bg-color: #0d1117;
-      --card-bg: #161b22;
-      --input-bg: #21262d;
+      --bg-color: #0b0e14;
+      --card-bg: #121824;
+      --input-bg: #1a2232;
       --text-main: #f0f6fc;
+      --text-muted: #8b949e;
       --accent-neon: #00f2fe;
-      --border-color: #30363d;
+      --accent-green: #0ecb81;
+      --border-color: #232d3f;
+      --btn-blue: #0072ff;
+      --btn-blue-hover: #0056c6;
     }
 
     body {
       background-color: var(--bg-color);
       color: var(--text-main);
-      font-family: Arial, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
       margin: 0;
+      padding: 20px 0;
     }
 
     .card {
@@ -30,24 +35,55 @@
       border: 1px solid var(--border-color);
       border-radius: 12px;
       padding: 24px;
-      width: 320px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      width: 400px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     }
 
     h2 {
       color: var(--accent-neon);
       margin-top: 0;
+      text-align: center;
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+    }
+
+    .module {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .module-title {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: var(--accent-neon);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
 
     .field {
-      margin-bottom: 16px;
       display: flex;
       flex-direction: column;
+      margin-bottom: 10px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
     }
 
     label {
-      font-size: 0.9rem;
-      margin-bottom: 6px;
+      font-size: 0.8rem;
+      margin-bottom: 5px;
+      color: var(--text-muted);
     }
 
     input, select {
@@ -57,100 +93,230 @@
       padding: 10px;
       border-radius: 6px;
       outline: none;
+      font-size: 0.9rem;
+    }
+
+    select option {
+      background-color: var(--input-bg);
+      color: var(--text-main);
+    }
+
+    .rates-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 0.8rem;
+    }
+
+    .rate-item {
+      background: var(--input-bg);
+      padding: 8px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .rate-item span:last-child {
+      color: var(--accent-green);
+      font-weight: bold;
     }
 
     button {
       width: 100%;
       padding: 12px;
-      background: #0072ff;
+      background: var(--btn-blue);
       border: none;
       color: white;
       font-weight: bold;
       border-radius: 6px;
       cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s;
     }
 
     button:hover {
-      background: #00c6ff;
+      background: var(--btn-blue-hover);
     }
 
     .res-box {
-      margin-top: 20px;
-      padding-top: 15px;
-      border-top: 1px solid var(--border-color);
+      margin-top: 14px;
+    }
+
+    .res-box p {
+      margin: 8px 0;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
     }
 
     .hidden {
       display: none;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
     }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h2>Cotizador</h2>
+    <h2>Cotizador Multidivisa</h2>
 
-    <!-- FORMULARIO -->
-    <form id="miCotizador">
-      <div class="field">
-        <label for="campoMonto">Monto Base ($):</label>
-        <input type="number" id="campoMonto" step="0.01" placeholder="Ej: 100" required>
+    <form id="cotizadorForm">
+      
+      <!-- 1. SELECCIÓN DE MONEDAS Y DIRECCIÓN -->
+      <div class="module">
+        <div class="module-title">1. Selección de Monedas</div>
+        
+        <div class="field">
+          <label for="modoConversion">Tipo de Operación:</label>
+          <select id="modoConversion">
+            <option value="fiatToCrypto">Moneda Local ➔ Cripto (Comprar)</option>
+            <option value="cryptoToFiat">Cripto ➔ Moneda Local (Vender)</option>
+          </select>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="fiatSelect">Moneda Local:</label>
+            <select id="fiatSelect">
+              <option value="VES" data-rate="36.5" data-symbol="Bs.">VES (Bolívares)</option>
+              <option value="ARS" data-rate="1250" data-symbol="$">ARS (Pesos Arg)</option>
+              <option value="COP" data-rate="4100" data-symbol="$">COP (Pesos Col)</option>
+              <option value="MXN" data-rate="18.0" data-symbol="$">MXN (Pesos Mex)</option>
+              <option value="CLP" data-rate="940" data-symbol="$">CLP (Pesos Chi)</option>
+              <option value="PEN" data-rate="3.75" data-symbol="S/">PEN (Soles)</option>
+              <option value="BRL" data-rate="5.50" data-symbol="R$">BRL (Real)</option>
+              <option value="EUR" data-rate="0.92" data-symbol="€">EUR (Euros)</option>
+              <option value="GBP" data-rate="0.78" data-symbol="£">GBP (Libras)</option>
+              <option value="USD" data-rate="1.00" data-symbol="$">USD (Dólares)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="cryptoSelect">Criptomoneda:</label>
+            <select id="cryptoSelect">
+              <option value="USDT" data-usd="1.00">USDT</option>
+              <option value="BTC" data-usd="65000">BTC (Bitcoin)</option>
+              <option value="ETH" data-usd="3500">ETH (Ethereum)</option>
+              <option value="SOL" data-usd="140">SOL (Solana)</option>
+              <option value="BNB" data-usd="580">BNB</option>
+              <option value="XRP" data-usd="0.55">XRP</option>
+              <option value="ADA" data-usd="0.35">ADA (Cardano)</option>
+              <option value="DOGE" data-usd="0.10">DOGE</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="campoPlan">Plan:</label>
-        <select id="campoPlan" required>
-          <option value="" disabled selected>-- Selecciona --</option>
-          <option value="0.10">Básico (+10%)</option>
-          <option value="0.20">Estándar (+20%)</option>
-          <option value="0.30">Premium (+30%)</option>
-        </select>
+      <!-- 2. MONTO A CALCULAR -->
+      <div class="module">
+        <div class="module-title">2. Monto a Calcular</div>
+        <div class="field">
+          <label id="lblMontoInput" for="montoInput">Monto en Bolívares (VES):</label>
+          <input type="number" id="montoInput" step="any" placeholder="Ej: 300" required>
+        </div>
       </div>
 
-      <!-- Importante: type="submit" para que active el evento submit -->
-      <button type="submit">Calcular</button>
+      <!-- 3. TASAS DE REFERENCIA -->
+      <div class="module">
+        <div class="module-title">3. Tasas de Referencia (VS USD)</div>
+        <div class="rates-grid">
+          <div class="rate-item"><span>USDT</span><span>$1.00</span></div>
+          <div class="rate-item"><span>BTC</span><span>$65,000</span></div>
+          <div class="rate-item"><span>ETH</span><span>$3,500</span></div>
+          <div class="rate-item"><span>SOL</span><span>$140.00</span></div>
+          <div class="rate-item"><span>BNB</span><span>$580.00</span></div>
+          <div class="rate-item"><span>EUR</span><span>$1.08</span></div>
+        </div>
+      </div>
+
+      <!-- BOTÓN -->
+      <button type="submit">Calcular Cotización</button>
     </form>
 
-    <!-- RESULTADO -->
-    <div id="pantallaResultado" class="res-box hidden">
-      <p>Monto: <strong id="outMonto">$0.00</strong></p>
-      <p>Recargo: <strong id="outRecargo">$0.00</strong></p>
-      <p>Total: <strong id="outTotal" style="color: var(--accent-neon);">$0.00</strong></p>
+    <!-- 4. RESULTADO -->
+    <div class="module res-box hidden" id="pantallaResultado">
+      <div class="module-title">4. Resultado del Cálculo</div>
+      <p>Monto ingresado: <strong id="outMontoIngresado">-</strong></p>
+      <p>Precio unitario: <strong id="outPrecioUnitario">-</strong></p>
+      <p>Total a recibir: <strong id="outTotal" style="color: var(--accent-neon); font-size: 1.1rem;">-</strong></p>
     </div>
+
+    <!-- CRÉDITOS -->
+    <footer>
+      Desarrollado por Adrian Pantaleon
+    </footer>
+
   </div>
 
   <script>
-    // 1. Obtener elementos por ID directo
-    const formulario = document.getElementById('miCotizador');
-    const inputMonto = document.getElementById('campoMonto');
-    const selectPlan = document.getElementById('campoPlan');
+    const form = document.getElementById('cotizadorForm');
+    const modoConversion = document.getElementById('modoConversion');
+    const fiatSelect = document.getElementById('fiatSelect');
+    const cryptoSelect = document.getElementById('cryptoSelect');
+    const montoInput = document.getElementById('montoInput');
+    const lblMontoInput = document.getElementById('lblMontoInput');
 
-    const cajaResultado = document.getElementById('pantallaResultado');
-    const txtMonto = document.getElementById('outMonto');
-    const txtRecargo = document.getElementById('outRecargo');
-    const txtTotal = document.getElementById('outTotal');
+    const pantallaResultado = document.getElementById('pantallaResultado');
+    const outMontoIngresado = document.getElementById('outMontoIngresado');
+    const outPrecioUnitario = document.getElementById('outPrecioUnitario');
+    const outTotal = document.getElementById('outTotal');
 
-    // 2. Escuchar el evento 'submit'
-    formulario.addEventListener('submit', function(e) {
-      // Evita recargar la página
+    function actualizarEtiqueta() {
+      const fiatOpt = fiatSelect.options[fiatSelect.selectedIndex];
+      const cryptoOpt = cryptoSelect.options[cryptoSelect.selectedIndex];
+
+      if (modoConversion.value === 'fiatToCrypto') {
+        lblMontoInput.textContent = `Monto en ${fiatOpt.text.split(' ')[0]} (${fiatOpt.value}):`;
+      } else {
+        lblMontoInput.textContent = `Cantidad de ${cryptoOpt.value}:`;
+      }
+    }
+
+    modoConversion.addEventListener('change', actualizarEtiqueta);
+    fiatSelect.addEventListener('change', actualizarEtiqueta);
+    cryptoSelect.addEventListener('change', actualizarEtiqueta);
+
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
 
-      // Lectura directa de los valores
-      const montoVal = parseFloat(inputMonto.value) || 0;
-      const planVal = parseFloat(selectPlan.value) || 0;
+      const monto = parseFloat(montoInput.value) || 0;
+      const fiatOpt = fiatSelect.options[fiatSelect.selectedIndex];
+      const cryptoOpt = cryptoSelect.options[cryptoSelect.selectedIndex];
 
-      // Operaciones
-      const recargoCalculado = montoVal * planVal;
-      const totalCalculado = montoVal + recargoCalculado;
+      const tasaFiat = parseFloat(fiatOpt.getAttribute('data-rate'));
+      const simboloFiat = fiatOpt.getAttribute('data-symbol');
+      const precioCryptoUSD = parseFloat(cryptoOpt.getAttribute('data-usd'));
 
-      // Inyección en pantalla
-      txtMonto.textContent = '$' + montoVal.toFixed(2);
-      txtRecargo.textContent = '$' + recargoCalculado.toFixed(2);
-      txtTotal.textContent = '$' + totalCalculado.toFixed(2);
+      const precioCryptoEnFiat = precioCryptoUSD * tasaFiat;
 
-      // Mostrar resultados
-      cajaResultado.classList.remove('hidden');
+      if (modoConversion.value === 'fiatToCrypto') {
+        const totalCrypto = monto / precioCryptoEnFiat;
+
+        outMontoIngresado.textContent = `${simboloFiat} ${monto.toLocaleString('es-ES')}`;
+        outPrecioUnitario.textContent = `1 ${cryptoOpt.value} = ${simboloFiat} ${precioCryptoEnFiat.toLocaleString('es-ES', {minimumFractionDigits: 2})}`;
+        outTotal.textContent = `${totalCrypto.toFixed(6)} ${cryptoOpt.value}`;
+
+      } else {
+        const totalFiat = monto * precioCryptoEnFiat;
+
+        outMontoIngresado.textContent = `${monto} ${cryptoOpt.value}`;
+        outPrecioUnitario.textContent = `1 ${cryptoOpt.value} = ${simboloFiat} ${precioCryptoEnFiat.toLocaleString('es-ES', {minimumFractionDigits: 2})}`;
+        outTotal.textContent = `${simboloFiat} ${totalFiat.toLocaleString('es-ES', {minimumFractionDigits: 2})}`;
+      }
+
+      pantallaResultado.classList.remove('hidden');
     });
+
+    actualizarEtiqueta();
   </script>
 </body>
 </html>
