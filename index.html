@@ -62,6 +62,8 @@
       margin-bottom: 10px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
     }
 
     .grid-2 {
@@ -171,7 +173,7 @@
 
     <form id="cotizadorForm">
       
-      <!-- 1. SELECCIÓN DE MONEDAS Y DIRECCIÓN -->
+      <!-- 1. SELECCIÓN DE MONEDAS -->
       <div class="module">
         <div class="module-title">1. Selección de Monedas</div>
         
@@ -225,10 +227,13 @@
         </div>
       </div>
 
-      <!-- 3. TASAS DE REFERENCIA -->
+      <!-- 3. TASAS DE REFERENCIA EN VIVO -->
       <div class="module">
-        <div class="module-title">3. Tasas de Referencia (VS USD)</div>
-        <div class="rates-grid">
+        <div class="module-title">
+          <span>3. Tasas de Referencia (VS USD)</span>
+          <span id="apiStatus" style="color: var(--text-muted); font-size: 0.75rem;">Cargando...</span>
+        </div>
+        <div class="rates-grid" id="ratesGrid">
           <div class="rate-item"><span>USDT</span><span>$1.00</span></div>
           <div class="rate-item"><span>BTC</span><span>$65,000</span></div>
           <div class="rate-item"><span>ETH</span><span>$3,500</span></div>
@@ -264,6 +269,8 @@
     const cryptoSelect = document.getElementById('cryptoSelect');
     const montoInput = document.getElementById('montoInput');
     const lblMontoInput = document.getElementById('lblMontoInput');
+    const apiStatus = document.getElementById('apiStatus');
+    const ratesGrid = document.getElementById('ratesGrid');
 
     const pantallaResultado = document.getElementById('pantallaResultado');
     const outMontoIngresado = document.getElementById('outMontoIngresado');
@@ -278,6 +285,62 @@
         lblMontoInput.textContent = `Monto en ${fiatOpt.text.split(' ')[0]} (${fiatOpt.value}):`;
       } else {
         lblMontoInput.textContent = `Cantidad de ${cryptoOpt.value}:`;
+      }
+    }
+
+    // CONSUMO DE APIS
+    async function cargarDatosMercado() {
+      apiStatus.textContent = 'Actualizando...';
+      try {
+        // Fetch Binance API para Crypto
+        const cryptoRes = await fetch('https://api.binance.com/api/v3/ticker/price');
+        const cryptoData = await cryptoRes.json();
+        
+        // Fetch ExchangeRate API para Divisas Fiat
+        const fiatRes = await fetch('https://open.er-api.com/v6/latest/USD');
+        const fiatData = await fiatRes.json();
+
+        // Mapeo de precios crypto
+        const cryptoPrices = { USDT: 1 };
+        cryptoData.forEach(item => {
+          if (item.symbol.endsWith('USDT')) {
+            const coin = item.symbol.replace('USDT', '');
+            cryptoPrices[coin] = parseFloat(item.price);
+          }
+        });
+
+        // Actualizar opciones Cripto
+        Array.from(cryptoSelect.options).forEach(opt => {
+          if (cryptoPrices[opt.value]) {
+            opt.setAttribute('data-usd', cryptoPrices[opt.value]);
+          }
+        });
+
+        // Actualizar opciones Fiat
+        if (fiatData && fiatData.rates) {
+          Array.from(fiatSelect.options).forEach(opt => {
+            if (fiatData.rates[opt.value]) {
+              opt.setAttribute('data-rate', fiatData.rates[opt.value]);
+            }
+          });
+        }
+
+        // Actualizar UI del panel de tasas
+        ratesGrid.innerHTML = `
+          <div class="rate-item"><span>USDT</span><span>$1.00</span></div>
+          <div class="rate-item"><span>BTC</span><span>$${cryptoPrices.BTC?.toLocaleString('es-ES', {maximumFractionDigits: 0}) || '-'}</span></div>
+          <div class="rate-item"><span>ETH</span><span>$${cryptoPrices.ETH?.toLocaleString('es-ES', {maximumFractionDigits: 0}) || '-'}</span></div>
+          <div class="rate-item"><span>SOL</span><span>$${cryptoPrices.SOL?.toFixed(2) || '-'}</span></div>
+          <div class="rate-item"><span>BNB</span><span>$${cryptoPrices.BNB?.toFixed(2) || '-'}</span></div>
+          <div class="rate-item"><span>EUR</span><span>$${(1 / (fiatData.rates?.EUR || 0.92)).toFixed(2)}</span></div>
+        `;
+
+        apiStatus.textContent = 'En Vivo ●';
+        apiStatus.style.color = 'var(--accent-green)';
+      } catch (err) {
+        console.error('Error al cargar APIs:', err);
+        apiStatus.textContent = 'Modo Offline';
+        apiStatus.style.color = '#ff4d4d';
       }
     }
 
@@ -302,21 +365,22 @@
         const totalCrypto = monto / precioCryptoEnFiat;
 
         outMontoIngresado.textContent = `${simboloFiat} ${monto.toLocaleString('es-ES')}`;
-        outPrecioUnitario.textContent = `1 ${cryptoOpt.value} = ${simboloFiat} ${precioCryptoEnFiat.toLocaleString('es-ES', {minimumFractionDigits: 2})}`;
+        outPrecioUnitario.textContent = `1 ${cryptoOpt.value} = ${simboloFiat} ${precioCryptoEnFiat.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         outTotal.textContent = `${totalCrypto.toFixed(6)} ${cryptoOpt.value}`;
 
       } else {
         const totalFiat = monto * precioCryptoEnFiat;
 
         outMontoIngresado.textContent = `${monto} ${cryptoOpt.value}`;
-        outPrecioUnitario.textContent = `1 ${cryptoOpt.value} = ${simboloFiat} ${precioCryptoEnFiat.toLocaleString('es-ES', {minimumFractionDigits: 2})}`;
-        outTotal.textContent = `${simboloFiat} ${totalFiat.toLocaleString('es-ES', {minimumFractionDigits: 2})}`;
+        outPrecioUnitario.textContent = `1 ${cryptoOpt.value} = ${simboloFiat} ${precioCryptoEnFiat.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        outTotal.textContent = `${simboloFiat} ${totalFiat.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       }
 
       pantallaResultado.classList.remove('hidden');
     });
 
     actualizarEtiqueta();
+    cargarDatosMercado();
   </script>
 </body>
 </html>
