@@ -16,3 +16,7 @@ Un cotizador web dinámico, rápido e intuitivo desarrollado con HTML, CSS y Jav
 - **HTML5:** Estructura semántica del formulario.
 - **CSS3:** Estilos avanzados, variables CSS y animaciones fluídas.
 - **JavaScript (ES6+):** Manipulación del DOM y cálculo de variables en tiempo real.
+
+---
+### 📊 Fuente de Datos y Cotizaciones
+Este proyecto obtiene las tasas de cambio de criptomonedas en tiempo real gracias a la API gratuita de [CoinGecko](https://www.coingecko.com/).
